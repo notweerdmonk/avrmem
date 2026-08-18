@@ -1,0 +1,7 @@
+bin/
+docs/html/
+scratch/
+
+*.o
+*.a
+*.so
