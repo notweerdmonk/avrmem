@@ -23,7 +23,7 @@ AVR ELF memory and symbol explorer.
 - [API Reference](api.md)
 - [Testing Guide](testing.md)
 - [Architecture](architecture.md)
-- [Project README](README.md)
+- [Project README](../README.md)
 
 ## Project overview
 
