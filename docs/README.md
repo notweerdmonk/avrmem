@@ -1,4 +1,9 @@
-# avrmem
+---
+layout: default
+title: avrmem
+---
+
+# README
 
 `avrmem` is an AVR ELF memory and symbol explorer written in C.
 
