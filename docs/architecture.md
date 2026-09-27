@@ -278,6 +278,20 @@ The generated map represents the values after linker resolution.
 Therefore the map is the authoritative source for the linker's selected
 memory regions.
 
+Two consequences are load-bearing for the implementation:
+
+1. The probe must run a **full device link**. Linking with
+   `-nostartfiles -nodefaultlibs` drops the device-specific layout and
+   the map falls back to the generic avr5 script (`data ORIGIN=0x800060`,
+   128K text), which mistranslates every DATA address. Only the resolved
+   per-device Memory Configuration is valid input.
+2. The map's DATA origin is **not** the translation base. avr-ld resolves
+   the per-device DATA region to begin at physical SRAM start
+   (origin = VMA base + RAMSTART), so `avr_device_init()` normalizes the
+   stored DATA space to the VMA base (`origin -= sram_start`,
+   `length += sram_start`, guarded) before classification and
+   translation. The probe result itself keeps the raw map values.
+
 ---
 
 # 8. `avr_sfr.c`
@@ -426,6 +440,13 @@ This works for `.data` without requiring a special-case lookup of
 
 For `SHT_NOBITS` sections such as `.bss`, there is no file-backed
 initialization image and therefore no LMA.
+
+Section residency is orthogonal to LMA: a section without `SHF_ALLOC`
+(such as `.debug_*`, `.comment`, or notes) is not resident in target
+memory, so its VMA is not a device address and section resolution
+reports `UNKNOWN` with no physical address — even though a file-backed
+LMA may still exist (as for `.stab`). Residency gates translation;
+file offsets gate LMA.
 
 ---
 

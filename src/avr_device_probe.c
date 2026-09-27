@@ -1216,22 +1216,27 @@ extract_sfr_database(
  *   `true` when a non-empty linker map is successfully generated;
  *   `false` otherwise.
  *
- * @details
- * A temporary C source file is compiled and linked using:
- *
- * @code
- * -mmcu=<device>
- * -nostartfiles
- * -nodefaultlibs
- * -x c
- * -Wl,-Map=<map>
- * @endcode
- *
- * The `-x c` option is important because the temporary source pathname
- * has no `.c` suffix.
- *
- * The generated map is subsequently parsed by
- * @ref extract_linker_regions.
+  * @details
+  * A temporary C source file is compiled and linked using:
+  *
+  * @code
+  * -mmcu=<device>
+  * -x c
+  * -Wl,-Map=<map>
+  * @endcode
+  *
+  * The `-x c` option is important because the temporary source pathname
+  * has no `.c` suffix.
+  *
+  * The link is deliberately a full device link: -nostartfiles and
+  * -nodefaultlibs must NOT be used, because they drop the
+  * device-specific layout and the map falls back to the generic avr5
+  * script (data ORIGIN=0x800060), which mistranslates every DATA
+  * address. Only the resolved per-device Memory Configuration is a
+  * valid source for linker regions.
+  *
+  * The generated map is subsequently parsed by
+  * @ref extract_linker_regions.
  */
 static bool
 probe_linker_memory_map(
@@ -1384,17 +1389,22 @@ probe_linker_memory_map(
    * This is the device-specific linker invocation.
    *
    * -mmcu selects the AVR linker emulation/specs.
-   * -nostartfiles and -nodefaultlibs avoid pulling in the AVR runtime.
    * -x c forces the temporary file to be treated as C source.
    * -Wl,-Map requests the resolved linker map.
+   *
+   * NOTE: -nostartfiles and -nodefaultlibs must NOT be used here.
+   * They drop the device-specific layout, so the map falls back to
+   * the generic avr5 script (data ORIGIN=0x800060, 128K text, 16K
+   * eeprom) and every DATA address mistranslates (e.g. .data resolves
+   * as I/O instead of SRAM). The full device link is what resolves
+   * the per-device Memory Configuration; avr-libc is a required
+   * dependency of the probe in any case.
    */
   if (snprintf(
         command,
         sizeof(command),
         "avr-gcc "
         "-mmcu=%s "
-        "-nostartfiles "
-        "-nodefaultlibs "
         "-x c "
         "-Wl,-Map=%s "
         "\"%s\" "

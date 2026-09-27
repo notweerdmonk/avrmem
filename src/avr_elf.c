@@ -62,6 +62,19 @@
 #define ELF32_PHDR_SIZE       32
 #define ELF32_SYM_SIZE        16
 
+/*
+ * Largest input file accepted by the parser (64 MiB).
+ *
+ * ftell() on non-regular files (e.g. directories) can report LONG_MAX,
+ * which aborts sanitizer runtimes at malloc() instead of failing it.
+ * No valid AVR ELF approaches this bound (largest AVR flashes are
+ * single-digit megabytes with debug info far below it), so refuse
+ * absurd sizes up front and fail loudly. Compared in 64 bits so the
+ * check stays correct wherever long exceeds 32 bits.
+ */
+#define AVR_ELF_MAX_FILE_SIZE \
+  ((uint64_t)64 * (uint64_t)1024 * (uint64_t)1024)
+
 #define EI_CLASS              4
 #define EI_DATA               5
 
@@ -457,6 +470,11 @@ load_file(
     ftell(fp);
 
   if (file_size < 0) {
+    fclose(fp);
+    return false;
+  }
+
+  if ((uint64_t)file_size > AVR_ELF_MAX_FILE_SIZE) {
     fclose(fp);
     return false;
   }
@@ -2486,16 +2504,31 @@ avr_elf_resolve_section(
   resolved->size =
     section->size;
 
-  /*
-   * Ask AvrDevice to interpret the section VMA.
-   */
-  if (avr_device_resolve_address(
-        device,
-        section->addr,
-        &memory_space,
-        &avr_address,
-        &physical_address
-      ))
+  if (!section->alloc) {
+    /*
+     * A section without SHF_ALLOC is not resident in target memory:
+     * its VMA (conventionally 0 for .debug_*, .comment, .note, …) is
+     * not a device address, so device translation is skipped and the
+     * section resolves as UNKNOWN with no physical address. The
+     * file-backed LMA below is still meaningful (e.g. .stab) and is
+     * resolved independently of residency.
+     */
+    resolved->memory_space =
+      AVR_MEM_UNKNOWN;
+
+    resolved->avr_address =
+      section->addr;
+
+    resolved->has_physical_address =
+      false;
+  }
+  else if (avr_device_resolve_address(
+             device,
+             section->addr,
+             &memory_space,
+             &avr_address,
+             &physical_address
+           ))
   {
     resolved->memory_space =
       memory_space;

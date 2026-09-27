@@ -273,7 +273,24 @@ The main architectural constraints are:
 
 ## Testing
 
-A basic smoke-test sequence is:
+The automated suite runs under the plain `Makefile` (no extra build
+system) and uses the vendored single-header framework `greatest.h`
+(`tests/vendor/`):
+
+```bash
+make clean
+make test
+```
+
+This builds `bin/avrmem`, generates AVR fixtures with `avr-gcc` under
+`tests/fixtures/out/` (one `firmware.elf` per matrix device: atmega328p,
+atmega2560, attiny85), and runs unit (SFR, device, ELF validation),
+integration (real probe + fixture ELF, incl. SFR association), and CLI
+black-box tiers. Tiers needing `avr-gcc` print `SKIP` and exit 0 when
+the toolchain is absent; unit tiers always run. A sanitizer run is
+available via `make test-asan`.
+
+A manual smoke-test sequence is:
 
 ```bash
 make clean
@@ -287,7 +304,8 @@ bin/avrmem --symbol led_app firmware.elf
 bin/avrmem --device atmega328p --symbol led_app firmware.elf
 ```
 
-See [docs/testing.md](docs/testing.md) for the complete testing procedure.
+See [docs/testing.md](docs/testing.md) for the complete testing procedure
+(manual sections §§1–38 plus automated-suite sections §§39–40).
 
 ## License
 

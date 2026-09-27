@@ -569,6 +569,12 @@ typedef struct {
  * @note
  * The caller must release a successfully opened ELF object with
  * @ref avr_elf_close.
+ *
+ * @note
+ * Input files larger than 64 MiB are rejected before allocation:
+ * no valid AVR ELF approaches that size, and `ftell()` on
+ * non-regular files (e.g. directories) can otherwise report absurd
+ * sizes that abort sanitizer runtimes at `malloc()`.
  */
 bool
 avr_elf_open(
@@ -735,6 +741,11 @@ avr_elf_find_section(
  * - physical AVR address;
  * - physical target address;
  * - section LMA when available.
+ *
+ * A section without `SHF_ALLOC` (e.g. `.debug_*`, `.comment`, notes)
+ * is not resident in target memory: its VMA is not a device address,
+ * so it resolves with memory space `AVR_MEM_UNKNOWN` and no physical
+ * address, while a file-backed LMA is still reported when available.
  *
  * The returned object contains borrowed pointers into @ref AvrElf and
  * @ref AvrDevice-owned data.

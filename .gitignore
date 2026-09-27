@@ -1,6 +1,8 @@
 bin/
 docs/html/
 scratch/
+tests/bin/
+tests/fixtures/out/
 
 *.o
 *.a

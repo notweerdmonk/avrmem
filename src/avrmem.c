@@ -785,7 +785,7 @@ parse_options_posix(
    * options must precede it.
    */
   const char *optstring =
-    "+d:y:mcsp:h";
+    "+d:y:mcpsh";
 
   int option;
 

@@ -960,7 +960,8 @@ An SFR parsing problem should not prevent physical-memory discovery.
 
 # 36. Manual end-to-end smoke test
 
-For a known-good fixture, run:
+The manual sequence below is the semantic source of truth; `make test`
+(§39) automates it. For a known-good fixture, run:
 
 ```bash
 make clean
@@ -1007,6 +1008,16 @@ docs/api.md
 
 when the change affects their respective content.
 
+When test behavior or coverage changes, update:
+
+```text
+docs/testing.md (§§39–40)
+tests/fixtures/README.md
+AGENTS.md (Testing section)
+```
+
+at the same time.
+
 When architecture changes, update:
 
 ```text
@@ -1025,6 +1036,8 @@ Before considering a change complete:
 [ ] make clean
 [ ] make
 [ ] no compiler warnings
+[ ] make test green (unit + integration + CLI)
+[ ] make test-asan green
 [ ] debug build succeeds
 [ ] automatic device discovery works
 [ ] explicit --device works
@@ -1046,3 +1059,123 @@ Before considering a change complete:
 [ ] invalid command-line arguments are rejected
 [ ] documentation is updated
 ```
+
+---
+
+# 39. Automated test suite (`make test`)
+
+The manual sections §§1–38 define *what* to verify; the automated suite
+executes the verifiable core on every run. It uses the classic single
+`Makefile` (no extra build system) and the single-header framework
+`greatest.h` v1.5.0, sourced from the `tests/vendor/greatest/` git
+submodule when initialized, else from the bundled offline fallback
+`tests/vendor/greatest.h` (MIT — never hand-edit either copy; upgrade
+via `make vendor-sync`, see `tests/vendor/README.md`).
+
+```bash
+make clean
+make test       # unit → integration → CLI; first failure aborts
+make check      # alias for `make test`
+make test-asan  # same suite with -fsanitize=address,undefined
+make vendor-sync  # update greatest.h submodule + fallback (network)
+```
+
+A resolver self-check (`tests/vendor/test_resolve.sh`) runs first inside
+`make test`. Normal builds never touch the network; only `make
+vendor-sync` does. Fresh clones without `--recurse-submodules` build
+against the offline fallback with a one-line stderr note.
+
+Layout:
+
+```text
+tests/
+  vendor/greatest.h      # framework (vendored, see tests/vendor/README.md)
+  test_sfr.c             # SFR parser: IO8/MEM8, offsets, malformed input
+  test_device.c          # hand-built AvrDevice: classify/translate/word/nulls
+  test_elf_negative.c    # crafted blobs: validation order, LMA rules, notes
+  test_integration.c     # real avr_device_init + fixture ELF (gated)
+  cli_tests.sh           # black-box bin/avrmem exit-code + output matrix (gated)
+  fixtures/
+    firmware.c           # .text/.data/.bss/.noinit/.eeprom/SFR-touching source
+    lib/libutil.c        # archive member source
+    gen.sh               # builds out/ via avr-gcc (SKIP without toolchain)
+    out/                 # generated, gitignored: 328p firmware.elf,
+                         # stripped.elf, no_metadata.elf, libfixture.a,
+                         # invalid.bin, host.so, plus out/<device>/ per
+                         # matrix device (atmega2560, attiny85)
+```
+
+Multi-device matrix: `gen.sh` builds `firmware.elf` for every device in
+its matrix (currently atmega328p, atmega2560, attiny85) and the
+integration suite asserts depth on each one discovered under
+`FIXTURE_DIR` — no hardcoded device names. atxmega128a1 is deferred:
+its ELF is healthy but the probe parses only literal geometry macros
+while xmega headers chain expressions (see `fixtures/README.md` triage
+section); re-adding is one matrix line once the probe learns
+chained-macro evaluation.
+
+Conventions (binding on new tests):
+
+- Same flags as the product: `-std=c11 -Wall -Wextra -Wpedantic`, zero
+  warnings. Test runners link only the modules they exercise
+  (`test_device` additionally links the probe object for the linker only —
+  it never calls the probe).
+- One `TEST` per behavior; suite per file; `SKIP` (not fail) whenever the
+  toolchain or fixtures are absent. `FIXTURE_DIR` env overrides the
+  fixture directory (default `tests/fixtures/out`).
+- Toolchain-free tiers (`test_sfr`, `test_device`, `test_elf_negative`)
+  always run. Gated tiers (`test_integration`, `cli_tests.sh`) exit 0
+  with a `SKIP` banner when `avr-gcc` is unavailable.
+- Crash containment comes from `make test-asan`, not framework forks.
+  Under `test-asan` runners execute with
+  `ASAN_OPTIONS=allocator_may_return_null=1` (Makefile `TEST_ENV`) so
+  deliberate huge-allocation cases (e.g. opening a directory) exercise
+  the product's NULL path instead of aborting the runner.
+- Any quantum adding allocator-edge tests must run `make test-asan`
+  before advancing — `make test` green is not sufficient.
+- Labels and numbers in CLI greps are read from live output first, never
+  guessed; toolchain-self-consistent values (e.g. `--memory` sizes) are
+  gated on the matching device. Exit codes are asserted via redirect,
+  never pipes (pipelines mask codes).
+- When a test fails: check the test first; if the test is right, fix the
+  failing layer (probe → device → ELF → CLI), never compensate elsewhere
+  and never weaken the test. Record the bug in the test journal.
+
+---
+
+# 40. Suite history (regressions the suite caught at introduction)
+
+1. **Probe DATA regions from the generic linker script.** The probe linked
+   with `-nostartfiles -nodefaultlibs`, so its map fell back to the
+   generic avr5 script (`data ORIGIN=0x800060`) instead of the resolved
+   per-device layout (`data 0x800100` on atmega328p). Every `.data`/`.bss`/
+   `.noinit` symbol classified as I/O. Fixed at the failing layers:
+   full device link in `probe_linker_memory_map`, plus VMA-base DATA
+   normalization in `avr_device_init`
+   (`origin -= sram_start`, `length += sram_start`, guarded), derived
+   from map origin + RAMSTART macro — no MCU table, no hardcoded base
+   (verified on atmega328p/atmega2560/attiny85 maps).
+2. **Short option `-p` required an argument.** The optstring had `p:`
+   while `long_options[]` declares `map` as `no_argument`, so
+   `-p firmware.elf` swallowed the ELF. Fixed with one character
+   (`p:` → `p` in `src/avrmem.c`).
+3. **Non-allocated sections displayed as resident FLASH.** `--sections`
+   showed VMA-0 non-`SHF_ALLOC` sections (`.debug_*`, `.comment`,
+   `.stab*`, notes, NULL) as `FLASH` with `physical=0x0`. Filed with
+   failing CLI tests first (5 red), then fixed in `avr_elf_resolve_section`:
+   non-allocated sections resolve `UNKNOWN` with no physical address while
+   file-backed LMA still resolves; device model and presentation untouched.
+   A C lock-in test (`nonalloc_section_unknown`) pins the layer.
+4. **Sanitizer abort on absurd allocation.** Opening a directory made
+   `ftell` report `LONG_MAX`, and `malloc` of that size aborts ASan
+   (glibc returns `NULL`, which the code already handled — so plain
+   runs were green while `make test-asan` aborted). Fixed in product
+   code with a 64 MiB pre-`malloc` file-size cap in `load_file()`
+   (`AVR_ELF_MAX_FILE_SIZE`; no valid AVR ELF approaches it), which
+   also bounds every downstream allocation since all derive from
+   in-image offsets. The `ASAN_OPTIONS=allocator_may_return_null=1`
+   runner env stays as a second layer; allocator-edge behavior now
+   lives in product code, not in the environment.
+
+All were fixed in product code with zero weakening of tests — the pattern
+to preserve.

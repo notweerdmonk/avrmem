@@ -121,6 +121,8 @@ bin:
 .PHONY: clean
 clean:
 	-rm -f $(TARGET)
+	-rm -f $(TEST_BIN_DIR)/test_*
+	-rm -rf tests/fixtures/out
 
 
 # ----------------------------------------------------------------------
@@ -129,6 +131,102 @@ clean:
 
 .PHONY: rebuild
 rebuild: clean all
+
+
+# ----------------------------------------------------------------------
+# Tests (greatest.h, see tests/vendor/README.md)
+# ----------------------------------------------------------------------
+#
+#   make test      Build and run the full suite (unit tiers always run;
+#                  toolchain-gated tiers SKIP when avr-gcc is absent)
+#   make check     Alias for `make test`
+#   make test-asan Same suite with AddressSanitizer + UBSan (test binaries)
+#   make vendor-sync
+#                  Update the greatest.h submodule (network) and refresh
+#                  the offline fallback copy (only sync entry point)
+#
+# Test sources are picked up automatically: tests/test_*.c -> tests/bin/*.
+# Each runner links only the modules it exercises (explicit rules below).
+# greatest.h comes from the submodule when initialized, else from the
+# bundled offline copy — see tests/vendor/README.md. Normal builds never
+# touch the network; only `make vendor-sync` does.
+# ----------------------------------------------------------------------
+
+TEST_BIN_DIR := tests/bin
+
+TEST_SOURCES := $(wildcard tests/test_*.c)
+TEST_RUNNERS := $(patsubst tests/%.c,$(TEST_BIN_DIR)/%,$(TEST_SOURCES))
+
+GREATEST_INCLUDE := $(shell tests/vendor/resolve_greatest.sh)
+
+# Sanitizer flags apply to test binaries only (set by `make test-asan`).
+TEST_SAN :=
+
+# Extra env for running test binaries (set by `make test-asan`).
+#
+# allocator_may_return_null=1 makes ASan emulate glibc on huge
+# allocations (return NULL so the parser's malloc-failure path runs)
+# instead of aborting the runner. Needed by the directory-open case in
+# test_elf_negative, which deliberately triggers a LONG_MAX-sized
+# allocation that real malloc refuses gracefully.
+TEST_ENV :=
+
+$(TEST_BIN_DIR):
+	mkdir -p $@
+
+$(TEST_BIN_DIR)/test_sfr: tests/test_sfr.c src/avr_sfr.c | $(TEST_BIN_DIR)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(TEST_SAN) -I$(GREATEST_INCLUDE) tests/test_sfr.c src/avr_sfr.c -o $@
+
+# NOTE: test_device links avr_device_probe.c too — avr_device_init
+# references the probe layer, so the linker needs it even though no test
+# calls init (fixtures are hand-built, toolchain-free).
+$(TEST_BIN_DIR)/test_device: tests/test_device.c src/avr_device.c src/avr_sfr.c src/avr_device_probe.c | $(TEST_BIN_DIR)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(TEST_SAN) -I$(GREATEST_INCLUDE) tests/test_device.c src/avr_device.c src/avr_sfr.c src/avr_device_probe.c -o $@
+
+# NOTE: test_elf_negative carries its own guarded _POSIX_C_SOURCE for
+# mkstemp, so plain $(CFLAGS) suffice.
+$(TEST_BIN_DIR)/test_elf_negative: tests/test_elf_negative.c src/avr_elf.c src/avr_device.c src/avr_sfr.c src/avr_device_probe.c | $(TEST_BIN_DIR)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(TEST_SAN) -I$(GREATEST_INCLUDE) tests/test_elf_negative.c src/avr_elf.c src/avr_device.c src/avr_sfr.c src/avr_device_probe.c -o $@
+
+# NOTE: gated integration suite — reads FIXTURE_DIR (default
+# tests/fixtures/out) and SKIPs (exit 0) when firmware.elf is absent.
+$(TEST_BIN_DIR)/test_integration: tests/test_integration.c src/avr_elf.c src/avr_device.c src/avr_sfr.c src/avr_device_probe.c | $(TEST_BIN_DIR)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(TEST_SAN) -I$(GREATEST_INCLUDE) tests/test_integration.c src/avr_elf.c src/avr_device.c src/avr_sfr.c src/avr_device_probe.c -o $@
+
+.PHONY: test
+test: all $(TEST_RUNNERS)
+	@if [ -x tests/vendor/test_resolve.sh ]; then tests/vendor/test_resolve.sh || exit 1; fi
+	@if [ -x tests/fixtures/gen.sh ]; then tests/fixtures/gen.sh; fi
+	@if [ -z "$(TEST_RUNNERS)" ]; then printf '%s\n' 'No test runners found.'; fi
+	@for t in $(TEST_RUNNERS); do printf '== %s\n' "$$t"; $(TEST_ENV) ./$$t || exit 1; done
+	@if [ -x tests/cli_tests.sh ]; then tests/cli_tests.sh; fi
+	@printf '%s\n' 'All tests passed.'
+
+.PHONY: check
+check: test
+
+.PHONY: test-asan
+test-asan: TEST_SAN := -fsanitize=address,undefined -fno-omit-frame-pointer
+test-asan: TEST_ENV := ASAN_OPTIONS=allocator_may_return_null=1
+test-asan: clean test
+
+
+# ----------------------------------------------------------------------
+# Vendor sync (greatest.h submodule — the ONLY network-touching target)
+# ----------------------------------------------------------------------
+#
+# Updates the pinned submodule, then refreshes the bundled offline
+# fallback from it so the two can never silently diverge. Run the full
+# suite afterwards and commit everything (gitlink + fallback + docs).
+# ----------------------------------------------------------------------
+
+.PHONY: vendor-sync
+vendor-sync:
+	git submodule update --init --depth 1 tests/vendor/greatest && \
+	grep -q 'GREATEST_VERSION_MAJOR 1' tests/vendor/greatest/greatest.h && \
+	cp tests/vendor/greatest/greatest.h tests/vendor/greatest.h && \
+	printf '%s\n' 'vendor-sync: fallback refreshed from submodule.' \
+	  'Now run: make clean && make test && make test-asan'
 
 
 # ----------------------------------------------------------------------
@@ -150,10 +248,14 @@ docs:
 help:
 	@printf '%s\n' \
 	  'Targets:' \
-	  '  make            Build bin/avrmem' \
-	  '  make debug      Build a debug configuration' \
-	  '  make clean      Remove bin/avrmem' \
-	  '  make rebuild    Clean and rebuild' \
+  '  make            Build bin/avrmem' \
+  '  make debug      Build a debug configuration' \
+  '  make test       Build and run the test suite' \
+  '  make check      Alias for `make test`' \
+  '  make test-asan  Run the test suite with ASan/UBSan' \
+  '  make vendor-sync Update greatest.h submodule + offline fallback' \
+  '  make clean      Remove bin/avrmem and test artifacts' \
+  '  make rebuild    Clean and rebuild' \
 	  '  make docs       Show documentation information' \
 	  '  make help       Show this help' \
 	  '' \

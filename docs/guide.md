@@ -133,6 +133,18 @@ For a full rebuild:
 make rebuild
 ```
 
+## Running tests
+
+```bash
+make test       # unit + integration + CLI black-box
+make test-asan  # same suite with AddressSanitizer/UBSan
+```
+
+Unit tiers run without a toolchain; integration and CLI tiers build
+AVR fixtures with `avr-gcc` first and `SKIP` gracefully without it.
+See the [Testing Guide](testing.md) §§39–40 for tiers, fixtures, and
+conventions.
+
 ---
 
 # 4. Host/toolchain requirements

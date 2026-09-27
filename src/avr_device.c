@@ -163,6 +163,34 @@ avr_device_init(
   }
 
   /*
+   * Validate the DATA linker-space normalization below up front.
+   *
+   * avr-ld resolves the per-device DATA region to begin at physical
+   * SRAM start (map origin = VMA base + RAMSTART; confirmed across
+   * atmega328p, atmega2560, and attiny85 maps). The stored DATA space
+   * is therefore moved back to the VMA base:
+   *
+   *     origin = probe.data_region_origin - probe.sram_start
+   *     length = probe.data_region_length + probe.sram_start
+   *
+   * so that (VMA - origin) is the physical DATA-space address used by
+   * classification and translation. An origin below SRAM start or a
+   * length that overflows means the region cannot be mapped onto
+   * physical DATA space; fail loudly instead of guessing. Checking
+   * here keeps the failure from leaking transferred ownership below.
+   */
+  if (probe.data_region_origin < probe.sram_start ||
+      (uint64_t)probe.data_region_length +
+        (uint64_t)probe.sram_start > (uint64_t)UINT32_MAX)
+  {
+    avr_device_probe_destroy(
+      &probe
+    );
+
+    return false;
+  }
+
+  /*
    * --------------------------------------------------------------
    * Device identity
    * --------------------------------------------------------------
@@ -215,12 +243,18 @@ avr_device_init(
    *
    *     ELF/linker DATA:
    *         0x00800100
+   *
+   * The DATA space is normalized to the VMA base (see the range
+   * check above): the stored origin corresponds to physical DATA
+   * address 0, so register file, I/O, and SRAM classify correctly
+   * from (VMA - origin). TEXT and EEPROM region origins already
+   * correspond to physical 0 and pass through unchanged.
    */
   device->data_space.origin =
-    probe.data_region_origin;
+    probe.data_region_origin - probe.sram_start;
 
   device->data_space.length =
-    probe.data_region_length;
+    probe.data_region_length + probe.sram_start;
 
   device->text_space.origin =
     probe.text_region_origin;
