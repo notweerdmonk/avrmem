@@ -274,8 +274,8 @@ The main architectural constraints are:
 ## Testing
 
 The automated suite runs under the plain `Makefile` (no extra build
-system) and uses the vendored single-header framework `greatest.h`
-(`tests/vendor/`):
+system) and uses the single-header framework `greatest.h` (submodule
+with bundled offline fallback, see `tests/vendor/`):
 
 ```bash
 make clean

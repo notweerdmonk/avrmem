@@ -123,6 +123,7 @@ clean:
 	-rm -f $(TARGET)
 	-rm -f $(TEST_BIN_DIR)/test_*
 	-rm -rf tests/fixtures/out
+	-rm -rf docs/html
 
 
 # ----------------------------------------------------------------------
@@ -230,6 +231,31 @@ vendor-sync:
 
 
 # ----------------------------------------------------------------------
+# Doxygen API documentation (output: docs/html/, gitignored)
+# ----------------------------------------------------------------------
+#
+#   make doxygen    Generate API docs with doxygen (needs doxygen + dot)
+#   make clean-docs Remove the generated docs only (`clean` does too)
+#
+# The Doxyfile covers README.md, include/, src/, and tests/ (minus
+# tests/vendor). docs/index.md links docs/html/ for Jekyll passthrough;
+# generate before serving or building the site locally.
+# ----------------------------------------------------------------------
+
+.PHONY: doxygen
+doxygen:
+	@if ! command -v doxygen >/dev/null 2>&1; then \
+	  printf '%s\n' 'error: doxygen not found in PATH' >&2; \
+	  exit 1; \
+	fi
+	doxygen Doxyfile
+
+.PHONY: clean-docs
+clean-docs:
+	-rm -rf docs/html
+
+
+# ----------------------------------------------------------------------
 # Documentation helper
 # ----------------------------------------------------------------------
 
@@ -237,7 +263,9 @@ vendor-sync:
 docs:
 	@printf '%s\n' \
 	  'Documentation is in docs/.' \
-	  'The directory is configured as a Jekyll site.'
+	  'The directory is configured as a Jekyll site.' \
+	  'API docs: run `make doxygen` (output: docs/html/),' \
+	  '`make clean-docs` removes them.'
 
 
 # ----------------------------------------------------------------------
@@ -254,7 +282,9 @@ help:
   '  make check      Alias for `make test`' \
   '  make test-asan  Run the test suite with ASan/UBSan' \
   '  make vendor-sync Update greatest.h submodule + offline fallback' \
-  '  make clean      Remove bin/avrmem and test artifacts' \
+  '  make doxygen    Generate Doxygen API docs into docs/html/' \
+  '  make clean-docs Remove generated Doxygen docs' \
+  '  make clean      Remove build, test, and generated-docs artifacts' \
   '  make rebuild    Clean and rebuild' \
 	  '  make docs       Show documentation information' \
 	  '  make help       Show this help' \

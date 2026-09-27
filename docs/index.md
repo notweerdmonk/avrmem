@@ -25,6 +25,17 @@ AVR ELF memory and symbol explorer.
 - [Architecture](architecture.md)
 - [Project README](README.md)
 
+## API documentation (Doxygen)
+
+Generated API documentation for sources and headers:
+
+- [Doxygen index](html/index.html)
+- [File list](html/files.html)
+
+Run `make doxygen` first — `docs/html/` is generated locally and not
+committed, so these links resolve in a local Jekyll site (or any static
+server over `docs/`) but not in hosted builds that skip generation.
+
 ## Project overview
 
 The project separates the following responsibilities:

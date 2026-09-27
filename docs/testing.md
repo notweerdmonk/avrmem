@@ -1039,6 +1039,7 @@ Before considering a change complete:
 [ ] make test green (unit + integration + CLI)
 [ ] make test-asan green
 [ ] debug build succeeds
+[ ] make doxygen regenerates docs/html without errors
 [ ] automatic device discovery works
 [ ] explicit --device works
 [ ] --memory works
