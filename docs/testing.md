@@ -1018,6 +1018,11 @@ AGENTS.md (Testing section)
 
 at the same time.
 
+Whenever `README.md` changes, re-sync `docs/README.md` from it: copy
+the body verbatim, keep that file's front matter and `# README` title,
+rewrite `docs/*.md` links to bare filenames, and leave the ritual HTML
+comment on top intact.
+
 When architecture changes, update:
 
 ```text

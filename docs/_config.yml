@@ -1,0 +1,26 @@
+# Jekyll configuration for the avrmem documentation site.
+#
+# GitHub Pages serves this directory (docs/) directly. Local preview:
+#
+#   cd docs && bundle install && bundle exec jekyll serve
+#
+# All internal links stay relative, so the site works both as a project
+# page (served under /avrmem/) and from a custom domain or file path.
+
+title: avrmem
+description: AVR ELF memory and symbol explorer
+theme: minima
+# Project Pages serves this repo under /avrmem; blank this for a custom
+# domain or user-site root. Generated absolute hrefs depend on it.
+baseurl: "/avrmem"
+
+plugins:
+  # Rewrite `page.md`-style links to their rendered pages.
+  - jekyll-relative-links
+  - jekyll-sitemap
+
+exclude:
+  # Test framework sources are not site content.
+  - tests/vendor
+  # Generated, gitignored fixtures; keeps local builds snappy.
+  - tests/fixtures/out

@@ -1,5 +1,6 @@
 bin/
 docs/html/
+docs/_site/
 scratch/
 tests/bin/
 tests/fixtures/out/
