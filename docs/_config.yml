@@ -19,6 +19,16 @@ plugins:
   - jekyll-relative-links
   - jekyll-sitemap
 
+# Curated navbar: index.md stays out so the site title is the only
+# home link (it would otherwise render a duplicate `avrmem` → `/`).
+header_pages:
+  - README.md
+  - guide.md
+  - api.md
+  - testing.md
+  - architecture.md
+  - misc.md
+
 exclude:
   # Test framework sources are not site content.
   - tests/vendor

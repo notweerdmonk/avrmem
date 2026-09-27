@@ -252,7 +252,7 @@ doxygen:
 
 .PHONY: clean-docs
 clean-docs:
-	-rm -rf docs/html
+	-rm -rf docs/html docs/_site
 
 
 # ----------------------------------------------------------------------
@@ -283,7 +283,7 @@ help:
   '  make test-asan  Run the test suite with ASan/UBSan' \
   '  make vendor-sync Update greatest.h submodule + offline fallback' \
   '  make doxygen    Generate Doxygen API docs into docs/html/' \
-  '  make clean-docs Remove generated Doxygen docs' \
+  '  make clean-docs Remove generated docs (Doxygen + Jekyll output)' \
   '  make clean      Remove build, test, and generated-docs artifacts' \
   '  make rebuild    Clean and rebuild' \
 	  '  make docs       Show documentation information' \

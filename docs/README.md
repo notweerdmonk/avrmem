@@ -1,6 +1,6 @@
 ---
 layout: default
-title: avrmem
+title: Readme
 ---
 
 <!-- Site copy of ../README.md — do not edit directly; re-sync from the

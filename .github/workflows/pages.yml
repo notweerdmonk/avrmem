@@ -1,0 +1,74 @@
+# GitHub Pages deployment with generated Doxygen API docs.
+#
+# This workflow is INERT until the Pages source setting is switched from
+# the docs/ folder to "GitHub Actions" (the user flips this manually).
+# Until then the live site keeps serving from docs/ as before.
+#
+# The stock docs/-folder Pages build cannot run `make doxygen`, so the
+# generated API pages (docs/html/, gitignored) would 404 there. This
+# workflow generates them first, then builds and deploys the site.
+
+name: docs-site
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - docs/**
+      - Doxyfile
+      - src/**
+      - include/**
+      - README.md
+      - Makefile
+      - .github/workflows/pages.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout with submodules
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install doxygen and graphviz
+        run: sudo apt-get update && sudo apt-get install -y doxygen graphviz
+
+      - name: Generate Doxygen API docs
+        run: make doxygen
+
+      - name: Set up Ruby with bundler cache
+        uses: ruby/setup-ruby@v1
+        with:
+          working-directory: docs
+          bundler-cache: true
+
+      - name: Build Jekyll site
+        working-directory: docs
+        run: bundle exec jekyll build -d _site
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/_site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

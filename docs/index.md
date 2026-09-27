@@ -24,6 +24,7 @@ AVR ELF memory and symbol explorer.
 - [Testing Guide](testing.md)
 - [Architecture](architecture.md)
 - [Project README](README.md)
+- [Miscellaneous](misc.md)
 
 ## API documentation (Doxygen)
 
