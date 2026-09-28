@@ -4,7 +4,7 @@ title: Readme
 ---
 
 <!-- Site copy of ../README.md — do not edit directly; re-sync from the
-     root file whenever it changes (see testing.md §37). -->
+     root file whenever it changes (see the Documentation regression section in testing.md). -->
 
 # README
 
@@ -312,7 +312,7 @@ bin/avrmem --device atmega328p --symbol led_app firmware.elf
 ```
 
 See [testing.md](testing.md) for the complete testing procedure
-(manual sections §§1–38 plus automated-suite sections §§39–40).
+(manual sections plus the automated test suite section).
 
 ## License
 

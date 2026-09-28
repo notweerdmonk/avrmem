@@ -14,7 +14,7 @@ project.
 
 ---
 
-## 1. Problem statement
+## Problem statement
 
 `avrmem` needs to interpret AVR ELF executables while remaining independent
 of any single MCU.
@@ -44,7 +44,7 @@ The current architecture separates those concerns.
 
 ---
 
-# 2. Architectural overview
+# Architectural overview
 
 The application is divided into the following layers:
 
@@ -84,7 +84,7 @@ The responsibilities are intentionally separated.
 
 ---
 
-# 3. `avrmem.c`
+# `avrmem.c`
 
 `avrmem.c` is the application frontend.
 
@@ -107,7 +107,7 @@ The frontend consumes the public APIs exposed by the lower layers.
 
 ---
 
-# 4. `avr_elf.c`
+# `avr_elf.c`
 
 `avr_elf.c` owns ELF semantics.
 
@@ -138,7 +138,7 @@ Those belong to the device layer.
 
 ---
 
-# 5. `avr_device.c`
+# `avr_device.c`
 
 `avr_device.c` owns the runtime representation of one selected AVR device.
 
@@ -169,7 +169,7 @@ The two categories are deliberately represented separately.
 
 ---
 
-# 6. Physical SRAM versus DATA linker space
+# Physical SRAM versus DATA linker space
 
 SRAM is a physical memory.
 
@@ -212,7 +212,7 @@ Their differences are ELF/linker section semantics.
 
 ---
 
-# 7. Device discovery
+# Device discovery
 
 Device-specific information is not maintained in a source-level MCU table.
 
@@ -226,7 +226,7 @@ The toolchain is then used to discover the device description.
 
 Two complementary mechanisms are used.
 
-## 7.1 Preprocessor discovery
+## Preprocessor discovery
 
 The probe asks AVR-GCC to preprocess `<avr/io.h>`:
 
@@ -248,7 +248,7 @@ This means the project does not maintain its own database of those values.
 
 ---
 
-## 7.2 Linker-memory discovery
+## Linker-memory discovery
 
 The probe performs an actual AVR link and generates a linker map:
 
@@ -294,7 +294,7 @@ Two consequences are load-bearing for the implementation:
 
 ---
 
-# 8. `avr_sfr.c`
+# `avr_sfr.c`
 
 `avr_sfr.c` owns SFR parsing.
 
@@ -335,7 +335,7 @@ whether avr-libc defined the register using `_SFR_IO8()` or `_SFR_MEM8()`.
 
 ---
 
-# 9. SFRs are an auxiliary capability
+# SFRs are an auxiliary capability
 
 SFR discovery must not invalidate an otherwise valid device description.
 
@@ -355,7 +355,7 @@ Therefore SFR discovery is intentionally treated as an auxiliary capability.
 
 ---
 
-# 10. Address-resolution model
+# Address-resolution model
 
 Address interpretation follows this model:
 
@@ -386,7 +386,7 @@ It asks `AvrDevice` to interpret the address.
 
 ---
 
-# 11. Resolved symbol model
+# Resolved symbol model
 
 `AvrResolvedSymbol` combines information from both layers.
 
@@ -420,7 +420,7 @@ symbol LMA
 
 ---
 
-# 12. LMA resolution
+# LMA resolution
 
 ELF section headers do not directly contain a load-memory address.
 
@@ -450,7 +450,7 @@ file offsets gate LMA.
 
 ---
 
-# 13. Device selection policy
+# Device selection policy
 
 The command-line frontend supports:
 
@@ -504,7 +504,7 @@ for explicit control.
 
 ---
 
-# 14. Command-line parsing
+# Command-line parsing
 
 `avrmem` uses `getopt_long()`.
 
@@ -536,7 +536,7 @@ all options precede the ELF filename.
 
 ---
 
-# 15. Ownership and lifetime
+# Ownership and lifetime
 
 Ownership is explicit throughout the design.
 
@@ -589,7 +589,7 @@ avr_elf_close()
 
 ---
 
-# 16. Error handling
+# Error handling
 
 Device probing is intentionally staged:
 
@@ -625,7 +625,7 @@ unable to initialize AVR device
 
 ---
 
-# 17. POSIX host assumption
+# POSIX host assumption
 
 The current implementation deliberately assumes a POSIX host.
 
@@ -657,7 +657,7 @@ but they are outside the current scope.
 
 ---
 
-# 18. Rejected alternatives
+# Rejected alternatives
 
 ## Hardcoded MCU tables
 
@@ -742,7 +742,7 @@ what that address means for this AVR device
 
 ---
 
-# 19. Architectural invariants
+# Architectural invariants
 
 The following rules should remain true as the project evolves.
 
@@ -791,7 +791,7 @@ initialization function or hardcoded memory table.
 
 ---
 
-# 20. Future extensions
+# Future extensions
 
 The current architecture leaves room for:
 

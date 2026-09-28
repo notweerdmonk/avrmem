@@ -305,7 +305,7 @@ bin/avrmem --device atmega328p --symbol led_app firmware.elf
 ```
 
 See [docs/testing.md](docs/testing.md) for the complete testing procedure
-(manual sections §§1–38 plus automated-suite sections §§39–40).
+(manual sections plus the automated test suite section).
 
 ## License
 

@@ -5,7 +5,7 @@ title: Misc
 
 # Miscellaneous
 
-# 1. Docs deploy workflow (`.github/workflows/pages.yml`)
+# Docs deploy workflow (`.github/workflows/pages.yml`)
 
 The GitHub Pages site deploys via Actions so the gitignored Doxygen
 output (`docs/html/`) is generated before the Jekyll build — the stock

@@ -5,7 +5,7 @@ title: Developer Guide
 
 # Developer Guide
 
-## 1. Purpose
+## Purpose
 
 `avrmem` is designed to inspect AVR ELF executables without maintaining an
 MCU-specific memory database in the source tree.
@@ -30,7 +30,7 @@ presentation
 
 ---
 
-# 2. Source tree
+# Source tree
 
 The project is organized as:
 
@@ -71,7 +71,7 @@ site.
 
 ---
 
-# 3. Build system
+# Build system
 
 The project is built with the top-level `Makefile`.
 
@@ -142,12 +142,12 @@ make test-asan  # same suite with AddressSanitizer/UBSan
 
 Unit tiers run without a toolchain; integration and CLI tiers build
 AVR fixtures with `avr-gcc` first and `SKIP` gracefully without it.
-See the [Testing Guide](testing.md) §§39–40 for tiers, fixtures, and
+See the [Testing Guide](testing.md) (Automated test suite section) for tiers, fixtures, and
 conventions.
 
 ---
 
-# 4. Host/toolchain requirements
+# Host/toolchain requirements
 
 The current implementation assumes a POSIX host.
 
@@ -179,7 +179,7 @@ avr-gcc -mmcu=atmega328p --version
 
 ---
 
-# 5. Runtime device selection
+# Runtime device selection
 
 The device can be selected explicitly:
 
@@ -207,7 +207,7 @@ resolution.
 
 ---
 
-# 6. Overall runtime flow
+# Overall runtime flow
 
 A normal invocation follows this sequence:
 
@@ -259,7 +259,7 @@ presentation
 
 ---
 
-# 7. `avr_device_probe.c`
+# `avr_device_probe.c`
 
 The probe layer is responsible for discovering device information from the
 installed toolchain.
@@ -275,7 +275,7 @@ Instead, the toolchain itself is the source of device-specific information.
 
 ---
 
-# 8. AVR-LibC macro probing
+# AVR-LibC macro probing
 
 The first discovery path uses AVR-GCC preprocessing.
 
@@ -325,7 +325,7 @@ contains fallbacks where appropriate.
 
 ---
 
-# 9. SFR discovery
+# SFR discovery
 
 SFR discovery uses the same preprocessor output.
 
@@ -368,7 +368,7 @@ address-based lookup.
 
 ---
 
-# 10. SFR probing is non-fatal
+# SFR probing is non-fatal
 
 SFR parsing is intentionally an auxiliary capability.
 
@@ -393,7 +393,7 @@ working simply because a new SFR representation is not yet recognized.
 
 ---
 
-# 11. Linker-memory probing
+# Linker-memory probing
 
 The second discovery path is the AVR linker itself.
 
@@ -428,7 +428,7 @@ length
 
 ---
 
-# 12. Why the linker map is used
+# Why the linker map is used
 
 The default linker script may contain expressions and linker symbols instead
 of concrete numeric values.
@@ -446,7 +446,7 @@ Do not replace this with a hardcoded MCU lookup table.
 
 ---
 
-# 13. `AvrDevice`
+# `AvrDevice`
 
 `avr_device.c` converts the probe result into the public `AvrDevice`
 representation.
@@ -473,7 +473,7 @@ FLASH byte -> CPU word address shift
 
 ---
 
-# 14. Physical memory versus linker memory
+# Physical memory versus linker memory
 
 This distinction is fundamental.
 
@@ -503,7 +503,7 @@ Instead, the address must be interpreted by `AvrDevice`.
 
 ---
 
-# 15. SRAM model
+# SRAM model
 
 SRAM is one physical memory region.
 
@@ -529,7 +529,7 @@ rather than separate physical regions for `.data` and `.bss`.
 
 ---
 
-# 16. DATA-space classification
+# DATA-space classification
 
 The physical AVR DATA space is conceptually divided into:
 
@@ -562,7 +562,7 @@ physical DATA address
 
 ---
 
-# 17. Unified address resolution
+# Unified address resolution
 
 The preferred device API is:
 
@@ -597,7 +597,7 @@ The caller should not replicate this logic.
 
 ---
 
-# 18. `avr_elf.c`
+# `avr_elf.c`
 
 The ELF parser is deliberately independent of MCU-specific address
 constants.
@@ -624,7 +624,7 @@ Device translation is delegated to `AvrDevice`.
 
 ---
 
-# 19. ELF sections
+# ELF sections
 
 An `AvrElfSection` contains the raw section-header representation.
 
@@ -655,7 +655,7 @@ The section header itself does not contain a direct LMA.
 
 ---
 
-# 20. ELF program headers and LMA
+# ELF program headers and LMA
 
 LMA is calculated from `PT_LOAD`.
 
@@ -687,7 +687,7 @@ This is particularly important for `.data`.
 
 ---
 
-# 21. `.data` handling
+# `.data` handling
 
 A `.data` section typically has:
 
@@ -718,7 +718,7 @@ The symbol resolver keeps these addresses separate.
 
 ---
 
-# 22. `.bss` handling
+# `.bss` handling
 
 `.bss` is normally represented by:
 
@@ -740,7 +740,7 @@ The startup code normally zeroes the region.
 
 ---
 
-# 23. `.noinit` handling
+# `.noinit` handling
 
 `.noinit` is a runtime SRAM section whose contents are intended to survive
 normal startup initialization.
@@ -752,7 +752,7 @@ than attempting to invent an LMA.
 
 ---
 
-# 24. Symbol resolution
+# Symbol resolution
 
 Symbol resolution starts with the raw ELF symbol value.
 
@@ -786,7 +786,7 @@ one implementation of symbol-resolution semantics.
 
 ---
 
-# 25. SFR association
+# SFR association
 
 Once a symbol is resolved into AVR DATA space, the device layer can look up
 an SFR using its canonical physical address.
@@ -814,7 +814,7 @@ displayed with its symbolic register name.
 
 ---
 
-# 26. FLASH byte and CPU word addresses
+# FLASH byte and CPU word addresses
 
 ELF program-space addresses are treated as FLASH byte addresses.
 
@@ -848,7 +848,7 @@ for device-independent output.
 
 ---
 
-# 27. Command-line parsing
+# Command-line parsing
 
 `avrmem` uses `getopt_long()`.
 
@@ -883,7 +883,7 @@ is intentionally rejected.
 
 ---
 
-# 28. Adding a new CLI option
+# Adding a new CLI option
 
 New options should be added in three places in `src/avrmem.c`:
 
@@ -903,7 +903,7 @@ details.
 
 ---
 
-# 29. Adding support for a new AVR device
+# Adding support for a new AVR device
 
 Do not add:
 
@@ -945,7 +945,7 @@ new source-code table entry
 
 ---
 
-# 30. Debugging device-probe failures
+# Debugging device-probe failures
 
 The probe is intentionally staged.
 
@@ -980,7 +980,7 @@ The same rule applies to the macro stage.
 
 ---
 
-# 31. Temporary files and POSIX behavior
+# Temporary files and POSIX behavior
 
 The current probe implementation uses POSIX facilities such as:
 
@@ -1006,7 +1006,7 @@ corresponding POSIX declarations.
 
 ---
 
-# 32. Memory ownership
+# Memory ownership
 
 Ownership transfers should be explicit.
 
@@ -1043,7 +1043,7 @@ Do not retain borrowed pointers beyond the lifetime of their owning object.
 
 ---
 
-# 33. Error-handling conventions
+# Error-handling conventions
 
 Public boolean APIs should return:
 
@@ -1071,7 +1071,7 @@ should explicitly communicate unavailable information.
 
 ---
 
-# 34. Coding conventions
+# Coding conventions
 
 Use two spaces for indentation.
 
@@ -1091,7 +1091,7 @@ Do not introduce MCU-specific constants into the frontend or ELF parser.
 
 ---
 
-# 35. Modifying the architecture safely
+# Modifying the architecture safely
 
 Before modifying a central abstraction, check whether the behavior is already
 working in another translation unit.
@@ -1127,7 +1127,7 @@ rather than creating a second independent compiler invocation.
 
 ---
 
-# 36. Documentation workflow
+# Documentation workflow
 
 When behavior changes, update the relevant documentation at the same time.
 
@@ -1161,7 +1161,7 @@ Detailed implementation information belongs in `docs/`.
 
 ---
 
-# 37. Jekyll documentation
+# Jekyll documentation
 
 The `docs/` directory is intended to be a Jekyll site.
 
@@ -1196,7 +1196,7 @@ for direct browsing from the generated site.
 
 ---
 
-# 38. Recommended development cycle
+# Recommended development cycle
 
 A typical change should follow:
 
@@ -1234,7 +1234,7 @@ SFR association
 
 ---
 
-# 39. Completion criteria for a feature
+# Completion criteria for a feature
 
 A feature is considered complete when:
 

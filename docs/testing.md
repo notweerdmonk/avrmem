@@ -5,7 +5,7 @@ title: Testing Guide
 
 # Testing Guide
 
-## 1. Purpose
+## Purpose
 
 The testing strategy for `avrmem` is focused on the boundaries between:
 
@@ -30,7 +30,7 @@ The project currently relies on a combination of:
 
 ---
 
-# 2. Build verification
+# Build verification
 
 Always start with a clean build.
 
@@ -60,7 +60,7 @@ make DEBUG=1
 
 ---
 
-# 3. Compiler warning baseline
+# Compiler warning baseline
 
 The normal build should complete without warnings:
 
@@ -79,7 +79,7 @@ documented reason for it.
 
 ---
 
-# 4. AVR toolchain sanity checks
+# AVR toolchain sanity checks
 
 Before diagnosing `avrmem`, verify that the required AVR toolchain is
 available.
@@ -109,7 +109,7 @@ is that the target-specific AVR definitions are visible.
 
 ---
 
-# 5. Device-probe smoke test
+# Device-probe smoke test
 
 The device probe is a central dependency of the application.
 
@@ -156,7 +156,7 @@ The exact sizes and register count depend on the installed toolchain.
 
 ---
 
-# 6. Linker-map probe test
+# Linker-map probe test
 
 The linker probe should be tested independently when troubleshooting device
 initialization.
@@ -199,7 +199,7 @@ before modifying the map parser.
 
 ---
 
-# 7. ELF fixture requirements
+# ELF fixture requirements
 
 The most useful regression fixture is an AVR ELF executable containing:
 
@@ -218,7 +218,7 @@ possible so the complete resolution path can be exercised.
 
 ---
 
-# 8. Basic command-line smoke tests
+# Basic command-line smoke tests
 
 With a known-good ELF:
 
@@ -262,7 +262,7 @@ bin/avrmem \
 
 ---
 
-# 9. Automatic device discovery
+# Automatic device discovery
 
 Test the normal device-inference path:
 
@@ -288,7 +288,7 @@ Verify that the selected device is reported correctly.
 
 ---
 
-# 10. Explicit device selection
+# Explicit device selection
 
 Test:
 
@@ -315,7 +315,7 @@ explicit device selection
 
 ---
 
-# 11. CLI option-order tests
+# CLI option-order tests
 
 Options must precede the ELF filename.
 
@@ -343,7 +343,7 @@ argument.
 
 ---
 
-# 12. CLI argument-validation tests
+# CLI argument-validation tests
 
 Missing ELF:
 
@@ -409,7 +409,7 @@ Expected: failure.
 
 ---
 
-# 13. Short-option tests
+# Short-option tests
 
 The `getopt_long()` interface also supports the project's short aliases.
 
@@ -427,7 +427,7 @@ bin/avrmem -y led_app firmware.elf
 
 ---
 
-# 14. Section-resolution tests
+# Section-resolution tests
 
 Run:
 
@@ -457,7 +457,7 @@ Important sections to inspect are:
 
 ---
 
-# 15. FLASH symbol test
+# FLASH symbol test
 
 Select a function known to reside in `.text`:
 
@@ -491,7 +491,7 @@ The CLI should not implement this calculation itself.
 
 ---
 
-# 16. SRAM symbol test
+# SRAM symbol test
 
 Select a global or static SRAM-resident object:
 
@@ -515,7 +515,7 @@ The output should distinguish the ELF VMA from the physical SRAM address.
 
 ---
 
-# 17. `.data` test
+# `.data` test
 
 Select a symbol known to reside in `.data`:
 
@@ -545,7 +545,7 @@ This verifies both:
 
 ---
 
-# 18. `.bss` test
+# `.bss` test
 
 Select a symbol in `.bss`.
 
@@ -568,7 +568,7 @@ rather than a FLASH load.
 
 ---
 
-# 19. `.noinit` test
+# `.noinit` test
 
 When the ELF contains `.noinit`, select a symbol from it and verify:
 
@@ -582,7 +582,7 @@ The tool must not invent a FLASH LMA for `.noinit`.
 
 ---
 
-# 20. SFR tests
+# SFR tests
 
 The SFR parser consumes concrete avr-gcc preprocessor definitions.
 
@@ -611,7 +611,7 @@ physical address =
 
 ---
 
-# 21. SFR database tests
+# SFR database tests
 
 After device initialization, verify that the database is non-empty for a
 normal AVR device.
@@ -624,7 +624,7 @@ because avr-libc versions can expose different aliases and definitions.
 
 ---
 
-# 22. SFR name lookup
+# SFR name lookup
 
 Test known registers such as:
 
@@ -645,7 +645,7 @@ Verify that:
 
 ---
 
-# 23. SFR address lookup
+# SFR address lookup
 
 For a known register, obtain its canonical DATA-space address and query the
 database by address.
@@ -668,7 +668,7 @@ where both results refer to the same SFR definition.
 
 ---
 
-# 24. SFR-associated symbol test
+# SFR-associated symbol test
 
 When an ELF symbol resolves to a known SFR address, the resolved symbol
 should contain:
@@ -701,7 +701,7 @@ PORTB / UCSR0A / ...
 
 ---
 
-# 25. ELF parser negative tests
+# ELF parser negative tests
 
 The ELF parser should reject:
 
@@ -726,7 +726,7 @@ Expected: failure.
 
 ---
 
-# 26. Stripped ELF test
+# Stripped ELF test
 
 Use an ELF without `.symtab`.
 
@@ -743,7 +743,7 @@ available rather than crashing.
 
 ---
 
-# 27. Missing ELF device metadata
+# Missing ELF device metadata
 
 Test an ELF that does not expose usable AVR device metadata.
 
@@ -770,7 +770,7 @@ otherwise valid.
 
 ---
 
-# 28. Invalid device test
+# Invalid device test
 
 Test:
 
@@ -786,7 +786,7 @@ The diagnostic should identify the selected device.
 
 ---
 
-# 29. Linker-probe failure tests
+# Linker-probe failure tests
 
 Temporarily make `avr-gcc` unavailable from `PATH`:
 
@@ -801,7 +801,7 @@ being reported only as an unexplained symbol-resolution failure.
 
 ---
 
-# 30. Runtime ownership tests
+# Runtime ownership tests
 
 The following lifecycle should be safe:
 
@@ -841,7 +841,7 @@ Destroy functions should tolerate `NULL`.
 
 ---
 
-# 31. Address-resolution regression tests
+# Address-resolution regression tests
 
 For every supported device fixture, verify at least:
 
@@ -859,7 +859,7 @@ An unknown address must not silently become another memory type.
 
 ---
 
-# 32. LMA regression tests
+# LMA regression tests
 
 For `.data`, verify:
 
@@ -887,7 +887,7 @@ has_lma == false
 
 ---
 
-# 33. Memory-map regression tests
+# Memory-map regression tests
 
 Run:
 
@@ -914,7 +914,7 @@ hardcoded MCU constants.
 
 ---
 
-# 34. Automatic versus explicit device regression
+# Automatic versus explicit device regression
 
 For an ELF whose embedded device matches the supplied device, compare:
 
@@ -938,7 +938,7 @@ paths while using the same device-resolution implementation.
 
 ---
 
-# 35. Test-driven regression rule
+# Test-driven regression rule
 
 Whenever a bug is discovered:
 
@@ -958,10 +958,9 @@ An SFR parsing problem should not prevent physical-memory discovery.
 
 ---
 
-# 36. Manual end-to-end smoke test
+# Manual end-to-end smoke test
 
-The manual sequence below is the semantic source of truth; `make test`
-(§39) automates it. For a known-good fixture, run:
+The manual sequence below is the semantic source of truth; `make test` (Automated test suite section below) automates it. For a known-good fixture, run:
 
 ```bash
 make clean
@@ -994,7 +993,7 @@ status.
 
 ---
 
-# 37. Documentation regression
+# Documentation regression
 
 When CLI behavior changes, update:
 
@@ -1011,7 +1010,7 @@ when the change affects their respective content.
 When test behavior or coverage changes, update:
 
 ```text
-docs/testing.md (§§39–40)
+docs/testing.md (Automated test suite section)
 tests/fixtures/README.md
 AGENTS.md (Testing section)
 ```
@@ -1033,7 +1032,7 @@ at the same time.
 
 ---
 
-# 38. Final release checklist
+# Final release checklist
 
 Before considering a change complete:
 
@@ -1068,9 +1067,9 @@ Before considering a change complete:
 
 ---
 
-# 39. Automated test suite (`make test`)
+# Automated test suite (`make test`)
 
-The manual sections §§1–38 define *what* to verify; the automated suite
+The manual sections above define *what* to verify; the automated suite
 executes the verifiable core on every run. It uses the classic single
 `Makefile` (no extra build system) and the single-header framework
 `greatest.h` v1.5.0, sourced from the `tests/vendor/greatest/` git
@@ -1149,7 +1148,7 @@ Conventions (binding on new tests):
 
 ---
 
-# 40. Suite history (regressions the suite caught at introduction)
+# Suite history (regressions the suite caught at introduction)
 
 1. **Probe DATA regions from the generic linker script.** The probe linked
    with `-nostartfiles -nodefaultlibs`, so its map fell back to the
